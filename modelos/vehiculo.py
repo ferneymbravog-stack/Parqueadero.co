@@ -3,7 +3,8 @@ class Vehiculo:
 
     def __init__(self, placa, tipo, hora_entrada):
         self.placa = placa.strip().upper()
-        self.tipo = tipo.strip().lower()
+        tipo_limpio = tipo.strip().lower()
+        self.tipo = "motocicleta" if tipo_limpio == "moto" else tipo_limpio
         self.hora_entrada = hora_entrada
 
     def mostrar_informacion(self):

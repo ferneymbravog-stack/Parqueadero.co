@@ -467,13 +467,27 @@ class Parqueadero:
                 if not all(isinstance(val, str) and val.strip() for val in (placa, tipo, hora_entrada)):
                     raise ValueError("Los datos del vehículo (placa, tipo, hora_entrada) deben ser textos no vacíos.")
 
+                datetime.strptime(hora_entrada, "%Y-%m-%d %H:%M:%S")
+                tipo_normalizado = "motocicleta" if tipo.strip().lower() == "moto" else tipo.strip().lower()
+                if tipo_normalizado not in TARIFAS_POR_HORA:
+                    raise ValueError(f"Tipo de vehículo inválido en JSON: '{tipo}'.")
+
+                if self.buscar_vehiculo(placa):
+                    raise ValueError(f"Placa duplicada en el archivo JSON: '{placa}'.")
+
                 if 1 <= numero <= len(self.espacios):
                     vehiculo = Vehiculo(
                         placa=placa,
-                        tipo=tipo,
+                        tipo=tipo_normalizado,
                         hora_entrada=hora_entrada,
                     )
                     self.espacios[numero - 1].ocupar(vehiculo)
+
+            for salida in historial_salidas:
+                if not isinstance(salida, dict):
+                    raise ValueError("Cada registro en 'historial_salidas' debe ser un objeto JSON.")
+                if not isinstance(salida.get("total_pagar", 0), (int, float)) or not isinstance(salida.get("horas_cobradas", 0), (int, float)):
+                    raise ValueError("Los valores numéricos del historial de salidas son inválidos.")
 
             self.historial_salidas = historial_salidas
             return True

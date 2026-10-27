@@ -7,6 +7,8 @@ def validar_placa(placa):
     # Validación básica: evita placas vacías o demasiado cortas.
     if len(placa) < 5 or len(placa) > 10:
         raise ValueError("La placa debe tener entre 5 y 10 caracteres.")
+    if placa.startswith("-") or placa.endswith("-") or "--" in placa:
+        raise ValueError("El guion en la placa solo puede ir en el medio (ej. ABC-123).")
     if not placa.replace("-", "").isalnum():
         raise ValueError("La placa solo puede contener letras, números y guion.")
     return placa
