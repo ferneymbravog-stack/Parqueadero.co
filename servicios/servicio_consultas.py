@@ -1,4 +1,5 @@
 from servicios.servicio_entradas import validar_placa
+from config import ARCHIVO_REGISTROS_CSV, ARCHIVO_REPORTE_CSV
 
 
 def consultar_por_placa(parqueadero):
@@ -51,6 +52,32 @@ def consultar_ingresos_por_fecha(parqueadero, pausar=True):
         input("\nPresione Enter para continuar...")
 
 
+def exportar_csv(parqueadero):
+    print("\n--- EXPORTAR REGISTROS Y REPORTES A CSV ---")
+    print("1. Exportar registros de vehículos (estacionados e historial de salidas)")
+    print("2. Exportar reporte estadístico de ocupación e ingresos")
+    print("3. Exportar ambos archivos CSV")
+    opcion = input("Seleccione una opción (1-3): ").strip()
+
+    if opcion == "1":
+        if parqueadero.exportar_registros_csv():
+            print(f"Registros exportados exitosamente en: '{ARCHIVO_REGISTROS_CSV}'")
+    elif opcion == "2":
+        if parqueadero.exportar_reporte_csv():
+            print(f"Reporte exportado exitosamente en: '{ARCHIVO_REPORTE_CSV}'")
+    elif opcion == "3":
+        if parqueadero.exportar_todo_csv():
+            print(
+                f"Archivos exportados exitosamente en:\n"
+                f"  - '{ARCHIVO_REGISTROS_CSV}'\n"
+                f"  - '{ARCHIVO_REPORTE_CSV}'"
+            )
+    else:
+        print("Opción inválida. Seleccione una opción del 1 al 3.")
+
+    input("\nPresione Enter para continuar...")
+
+
 def menu_consultas(parqueadero):
     while True:
         print("\n--- MENÚ DE CONSULTAS E INFORMES ---")
@@ -58,7 +85,8 @@ def menu_consultas(parqueadero):
         print("2. Ver vehículos estacionados")
         print("3. Consultar espacios disponibles")
         print("4. Generar informe de ocupación e ingresos")
-        print("5. Volver al menú principal")
+        print("5. Exportar registros y reportes a CSV")
+        print("6. Volver al menú principal")
         opcion = input("Seleccione una opción: ").strip()
 
         if opcion == "1":
@@ -71,6 +99,8 @@ def menu_consultas(parqueadero):
         elif opcion == "4":
             generar_informe(parqueadero)
         elif opcion == "5":
+            exportar_csv(parqueadero)
+        elif opcion == "6":
             break
         else:
-            print("Opción inválida. Seleccione una opción del 1 al 5.")
+            print("Opción inválida. Seleccione una opción del 1 al 6.")

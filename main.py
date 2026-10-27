@@ -1,7 +1,7 @@
 from modelos.parqueadero import Parqueadero  #esto es para importara la clase parqueadero 
 from servicios.servicio_entradas import registrar_entrada  #esta importa la funcion que solicita los datos de vehiculos y registra la entreade de ellos 
 from servicios.servicio_salidas import registrar_salida
-from servicios.servicio_consultas import menu_consultas, generar_informe
+from servicios.servicio_consultas import menu_consultas, generar_informe, exportar_csv
 from config import CAPACIDAD_PARQUEADERO  #este es el que importa la constante que indica cuantos espacios tiene el parqueadero 
 
 
@@ -18,7 +18,8 @@ def mostrar_menu():
     print("3. Consultas (por placa / vehículos estacionados)")
     print("4. Consultar espacios disponibles")
     print("5. Generar informe de ocupación e ingresos")
-    print("6. Salir")
+    print("6. Exportar registros y reportes a CSV")
+    print("7. Salir")
 
 #def es la palabra reservada que permite definir una funcion 
 def main():
@@ -42,10 +43,12 @@ def main():
             elif opcion == "5":
                 generar_informe(parqueadero)
             elif opcion == "6":
+                exportar_csv(parqueadero)
+            elif opcion == "7":
                 print("Gracias por utilizar el sistema. ¡Hasta pronto!")
                 break
             else:
-                print("Opción inválida. Seleccione una opción del 1 al 6.")
+                print("Opción inválida. Seleccione una opción del 1 al 7.")
     except (KeyboardInterrupt, EOFError):
         print("\nSaliendo del sistema de forma segura. ¡Hasta pronto!")
 

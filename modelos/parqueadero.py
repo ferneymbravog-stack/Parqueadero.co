@@ -1,10 +1,16 @@
+import csv
 import json
 import math
 import os
 from datetime import datetime   # el datetime es para manejar hora y fecha en el parqueadero 
 from modelos.espacio import Espacio # esto es inportante para saber si los espacios estan libres o no 
 from modelos.vehiculo import Vehiculo
-from config import TARIFAS_POR_HORA, ARCHIVO_DATOS_JSON
+from config import (
+    TARIFAS_POR_HORA,
+    ARCHIVO_DATOS_JSON,
+    ARCHIVO_REGISTROS_CSV,
+    ARCHIVO_REPORTE_CSV,
+)
 
 
 class Parqueadero:
@@ -270,6 +276,120 @@ class Parqueadero:
                 )
         else:
             print("\nNo se han registrado salidas facturadas hasta el momento.")
+
+    def exportar_registros_csv(self, ruta_archivo=ARCHIVO_REGISTROS_CSV):
+        """Exporta los vehículos estacionados actualmente y el historial de salidas a un archivo CSV."""
+        try:
+            carpeta = os.path.dirname(ruta_archivo)
+            if carpeta:
+                os.makedirs(carpeta, exist_ok=True)
+
+            encabezados = [
+                "estado",
+                "espacio",
+                "placa",
+                "tipo",
+                "hora_entrada",
+                "hora_salida",
+                "tiempo_estadia",
+                "horas_cobradas",
+                "total_pagar",
+            ]
+
+            with open(ruta_archivo, mode="w", newline="", encoding="utf-8") as archivo_csv:
+                escritor = csv.DictWriter(archivo_csv, fieldnames=encabezados)
+                escritor.writeheader()
+
+                for espacio in self.espacios:
+                    if not espacio.esta_libre:
+                        escritor.writerow({
+                            "estado": "Estacionado",
+                            "espacio": espacio.numero,
+                            "placa": espacio.vehiculo.placa,
+                            "tipo": espacio.vehiculo.tipo,
+                            "hora_entrada": espacio.vehiculo.hora_entrada,
+                            "hora_salida": "En curso",
+                            "tiempo_estadia": "En curso",
+                            "horas_cobradas": 0,
+                            "total_pagar": 0,
+                        })
+
+                for salida in self.historial_salidas:
+                    escritor.writerow({
+                        "estado": "Finalizado",
+                        "espacio": salida.get("espacio", ""),
+                        "placa": salida.get("placa", ""),
+                        "tipo": salida.get("tipo", ""),
+                        "hora_entrada": salida.get("hora_entrada", ""),
+                        "hora_salida": salida.get("hora_salida", ""),
+                        "tiempo_estadia": salida.get("tiempo_estadia", ""),
+                        "horas_cobradas": salida.get("horas_cobradas", 0),
+                        "total_pagar": salida.get("total_pagar", 0),
+                    })
+
+            return True
+        except OSError as error:
+            print(f"Error al exportar registros a CSV en '{ruta_archivo}': {error}")
+            return False
+
+    def exportar_reporte_csv(self, ruta_archivo=ARCHIVO_REPORTE_CSV):
+        """Exporta el resumen estadístico de ocupación e ingresos a un archivo CSV."""
+        try:
+            carpeta = os.path.dirname(ruta_archivo)
+            if carpeta:
+                os.makedirs(carpeta, exist_ok=True)
+
+            ocupacion = self.obtener_informe_ocupacion()
+            ingresos = self.obtener_informe_ingresos()
+
+            filas = [
+                {"categoria": "Ocupacion", "indicador": "Capacidad total", "valor": ocupacion["capacidad_total"]},
+                {"categoria": "Ocupacion", "indicador": "Espacios ocupados", "valor": ocupacion["espacios_ocupados"]},
+                {"categoria": "Ocupacion", "indicador": "Espacios disponibles", "valor": ocupacion["espacios_disponibles"]},
+                {"categoria": "Ocupacion", "indicador": "Porcentaje de ocupacion (%)", "valor": ocupacion["porcentaje_ocupacion"]},
+            ]
+
+            for tipo, cantidad in ocupacion["ocupacion_por_tipo"].items():
+                filas.append({
+                    "categoria": "Ocupacion por tipo",
+                    "indicador": f"Vehiculos estacionados ({tipo})",
+                    "valor": cantidad,
+                })
+
+            filas.extend([
+                {"categoria": "Ingresos", "indicador": "Total salidas atendidas", "valor": ingresos["total_salidas"]},
+                {"categoria": "Ingresos", "indicador": "Total horas cobradas", "valor": ingresos["horas_totales_cobradas"]},
+                {"categoria": "Ingresos", "indicador": "Ingresos totales recaudados", "valor": ingresos["ingresos_totales"]},
+            ])
+
+            for tipo, monto in ingresos["ingresos_por_tipo"].items():
+                salidas_tipo = ingresos["salidas_por_tipo"].get(tipo, 0)
+                filas.append({
+                    "categoria": "Ingresos por tipo",
+                    "indicador": f"Salidas registradas ({tipo})",
+                    "valor": salidas_tipo,
+                })
+                filas.append({
+                    "categoria": "Ingresos por tipo",
+                    "indicador": f"Total recaudado ({tipo})",
+                    "valor": monto,
+                })
+
+            with open(ruta_archivo, mode="w", newline="", encoding="utf-8") as archivo_csv:
+                escritor = csv.DictWriter(archivo_csv, fieldnames=["categoria", "indicador", "valor"])
+                escritor.writeheader()
+                escritor.writerows(filas)
+
+            return True
+        except OSError as error:
+            print(f"Error al exportar reporte a CSV en '{ruta_archivo}': {error}")
+            return False
+
+    def exportar_todo_csv(self, ruta_registros=ARCHIVO_REGISTROS_CSV, ruta_reporte=ARCHIVO_REPORTE_CSV):
+        """Exporta tanto los registros detallados como el reporte de ocupación e ingresos."""
+        ok_registros = self.exportar_registros_csv(ruta_registros)
+        ok_reporte = self.exportar_reporte_csv(ruta_reporte)
+        return ok_registros and ok_reporte
 
     def guardar_en_json(self, ruta_archivo=ARCHIVO_DATOS_JSON):
         try:
