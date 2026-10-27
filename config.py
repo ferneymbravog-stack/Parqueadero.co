@@ -10,7 +10,3 @@ TARIFAS_POR_HORA = {
 
 # Ruta del archivo JSON para persistencia de datos
 ARCHIVO_DATOS_JSON = "datos/parqueadero.json"
-
-# Rutas por defecto para la exportación de archivos CSV
-ARCHIVO_REGISTROS_CSV = "datos/registros_parqueadero.csv"
-ARCHIVO_REPORTE_CSV = "datos/reporte_ocupacion_ingresos.csv"
