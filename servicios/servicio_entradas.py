@@ -3,7 +3,7 @@ from config import TIPOS_VEHICULO_VALIDOS
 
 
 def validar_placa(placa):
-    placa = placa.strip().upper()
+    placa = placa.strip().upper().replace(" ", "")
     # Validación básica: evita placas vacías o demasiado cortas.
     if len(placa) < 5 or len(placa) > 10:
         raise ValueError("La placa debe tener entre 5 y 10 caracteres.")
@@ -17,10 +17,12 @@ def registrar_entrada(parqueadero):
 
     try:
         placa = validar_placa(input("Ingrese la placa del vehículo: "))
-        tipo = input("Tipo de vehículo (carro/motocicleta): ").strip().lower()
+        tipo = input("Tipo de vehículo (carro/moto): ").strip().lower()
+        if tipo == "moto":
+            tipo = "motocicleta"
 
         if tipo not in TIPOS_VEHICULO_VALIDOS:
-            raise ValueError("Tipo inválido. Escriba 'carro' o 'motocicleta'.")
+            raise ValueError("Tipo inválido. Escriba 'carro', 'moto' o 'motocicleta'.")
 
         vehiculo = Vehiculo(
             placa=placa,
@@ -29,7 +31,10 @@ def registrar_entrada(parqueadero):
         )
 
         numero_espacio = parqueadero.registrar_entrada(vehiculo)
+        parqueadero.guardar_en_json()
         print(f"Entrada registrada correctamente. Espacio asignado: {numero_espacio}")
 
     except ValueError as error:
         print(f"No se pudo registrar la entrada: {error}")
+
+    input("\nPresione Enter para volver al menú...")

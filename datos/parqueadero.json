@@ -1,0 +1,16 @@
+{
+    "capacidad": 10,
+    "espacios_ocupados": [],
+    "historial_salidas": [
+        {
+            "espacio": 1,
+            "placa": "ABC123",
+            "tipo": "motocicleta",
+            "hora_entrada": "2026-10-23 00:22:06",
+            "hora_salida": "2026-10-23 00:22:32",
+            "tiempo_estadia": "0h 0m 26s",
+            "horas_cobradas": 1,
+            "total_pagar": 1500
+        }
+    ]
+}

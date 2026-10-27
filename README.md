@@ -1,6 +1,6 @@
 # Sistema de Control de Parqueadero
 
-Aplicación de consola en Python para registrar entradas de vehículos, asignar espacios y consultar ocupación.
+Aplicación de consola en Python para administrar entradas y salidas de vehículos, asignar y liberar espacios, calcular tarifas por tiempo y tipo de vehículo, realizar consultas y persistir la información en JSON.
 
 ## Requisitos
 - Python 3.10 o superior (no usa librerías externas).
@@ -17,13 +17,9 @@ python main.py
 python -m unittest discover -s pruebas -v
 ```
 
-## Funcionalidades iniciales
-- Menú de consola.
-- Registro de entradas.
-- Asignación automática de espacios.
-- Validación básica de placas y tipo de vehículo.
-- Consulta de vehículos estacionados.
-- Consulta de disponibilidad.
-
-## Alcance de esta versión
-Esta versión es el incremento inicial para las tareas T-01 a T-04. La salida de vehículos, las tarifas, la persistencia JSON y la exportación CSV se desarrollarán en los siguientes incrementos.
+## Funcionalidades
+- Menú interactivo de consola.
+- Registro de entradas y asignación automática de espacios.
+- Registro de salidas, liberación de espacios y cálculo de tarifas por hora o fracción.
+- Submenú de consultas (por placa, vehículos estacionados y disponibilidad de espacios).
+- Guardado y recuperación automática de datos en `datos/parqueadero.json`.
