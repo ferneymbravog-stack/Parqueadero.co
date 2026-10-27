@@ -121,50 +121,104 @@ class Parqueadero:
         print(f"Números de espacio libres: {', '.join(libres) if libres else 'Ninguno'}")
 
     def guardar_en_json(self, ruta_archivo=ARCHIVO_DATOS_JSON):
-        carpeta = os.path.dirname(ruta_archivo)
-        if carpeta:
-            os.makedirs(carpeta, exist_ok=True)
+        try:
+            carpeta = os.path.dirname(ruta_archivo)
+            if carpeta:
+                os.makedirs(carpeta, exist_ok=True)
 
-        datos = {
-            "capacidad": len(self.espacios),
-            "espacios_ocupados": [
-                {
-                    "numero": espacio.numero,
-                    "placa": espacio.vehiculo.placa,
-                    "tipo": espacio.vehiculo.tipo,
-                    "hora_entrada": espacio.vehiculo.hora_entrada,
-                }
-                for espacio in self.espacios
-                if not espacio.esta_libre
-            ],
-            "historial_salidas": self.historial_salidas,
-        }
+            datos = {
+                "capacidad": len(self.espacios),
+                "espacios_ocupados": [
+                    {
+                        "numero": espacio.numero,
+                        "placa": espacio.vehiculo.placa,
+                        "tipo": espacio.vehiculo.tipo,
+                        "hora_entrada": espacio.vehiculo.hora_entrada,
+                    }
+                    for espacio in self.espacios
+                    if not espacio.esta_libre
+                ],
+                "historial_salidas": self.historial_salidas,
+            }
 
-        with open(ruta_archivo, "w", encoding="utf-8") as archivo:
-            json.dump(datos, archivo, indent=4, ensure_ascii=False)
+            with open(ruta_archivo, "w", encoding="utf-8") as archivo:
+                json.dump(datos, archivo, indent=4, ensure_ascii=False)
+            return True
+        except OSError as error:
+            print(f"Error al guardar los datos en '{ruta_archivo}': {error}")
+            return False
+
+    def _reiniciar_estado(self):
+        for espacio in self.espacios:
+            espacio.vehiculo = None
+        self.historial_salidas = []
 
     def cargar_desde_json(self, ruta_archivo=ARCHIVO_DATOS_JSON):
         if not os.path.exists(ruta_archivo):
+            print(f"Aviso: El archivo '{ruta_archivo}' no existe. Se inicializará uno nuevo.")
+            self._reiniciar_estado()
+            self.guardar_en_json(ruta_archivo)
             return False
 
-        with open(ruta_archivo, "r", encoding="utf-8") as archivo:
-            datos = json.load(archivo)
+        try:
+            if os.path.getsize(ruta_archivo) == 0:
+                raise ValueError("El archivo JSON está vacío.")
 
-        for espacio in self.espacios:
-            espacio.vehiculo = None
+            with open(ruta_archivo, "r", encoding="utf-8") as archivo:
+                datos = json.load(archivo)
 
-        for item in datos.get("espacios_ocupados", []):
-            numero = item["numero"]
-            if 1 <= numero <= len(self.espacios):
-                vehiculo = Vehiculo(
-                    placa=item["placa"],
-                    tipo=item["tipo"],
-                    hora_entrada=item["hora_entrada"],
-                )
-                self.espacios[numero - 1].ocupar(vehiculo)
+            if not isinstance(datos, dict):
+                raise ValueError("El contenido raíz del JSON debe ser un objeto (diccionario).")
 
-        self.historial_salidas = datos.get("historial_salidas", [])
-        return True
+            espacios_ocupados = datos.get("espacios_ocupados", [])
+            historial_salidas = datos.get("historial_salidas", [])
+
+            if not isinstance(espacios_ocupados, list) or not isinstance(historial_salidas, list):
+                raise ValueError("'espacios_ocupados' e 'historial_salidas' deben ser listas.")
+
+            self._reiniciar_estado()
+
+            for item in espacios_ocupados:
+                if not isinstance(item, dict):
+                    raise ValueError("Cada registro de espacio ocupado debe ser un objeto JSON.")
+
+                campos_requeridos = ("numero", "placa", "tipo", "hora_entrada")
+                if not all(campo in item for campo in campos_requeridos):
+                    raise ValueError("Faltan campos obligatorios en un registro de vehículo.")
+
+                numero = item["numero"]
+                placa = item["placa"]
+                tipo = item["tipo"]
+                hora_entrada = item["hora_entrada"]
+
+                if not isinstance(numero, int) or isinstance(numero, bool):
+                    raise ValueError("El número de espacio debe ser un entero válido.")
+                if not all(isinstance(val, str) and val.strip() for val in (placa, tipo, hora_entrada)):
+                    raise ValueError("Los datos del vehículo (placa, tipo, hora_entrada) deben ser textos no vacíos.")
+
+                if 1 <= numero <= len(self.espacios):
+                    vehiculo = Vehiculo(
+                        placa=placa,
+                        tipo=tipo,
+                        hora_entrada=hora_entrada,
+                    )
+                    self.espacios[numero - 1].ocupar(vehiculo)
+
+            self.historial_salidas = historial_salidas
+            return True
+
+        except (json.JSONDecodeError, UnicodeDecodeError, ValueError, KeyError, TypeError) as error:
+            print(
+                f"Advertencia: El archivo '{ruta_archivo}' está dañado o tiene datos inválidos ({error}). "
+                "Se restablecerá el archivo con valores por defecto."
+            )
+            self._reiniciar_estado()
+            self.guardar_en_json(ruta_archivo)
+            return False
+        except OSError as error:
+            print(f"Error de lectura al abrir '{ruta_archivo}': {error}")
+            self._reiniciar_estado()
+            return False
 #aca es donde nos devuelve la hora y la fecha 
     @staticmethod
     def hora_actual():

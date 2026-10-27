@@ -75,6 +75,45 @@ class TestParqueadero(unittest.TestCase):
             self.assertIsNotNone(espacio)
             self.assertEqual(espacio.numero, 1)
 
+    def test_cargar_json_inexistente_inicializa_archivo(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ruta = os.path.join(tmpdir, "no_existe.json")
+            cargado = self.parqueadero.cargar_desde_json(ruta)
+            self.assertFalse(cargado)
+            self.assertTrue(os.path.exists(ruta))
+            self.assertEqual(self.parqueadero.cantidad_disponible(), 2)
+
+    def test_cargar_json_danado_no_detiene_sistema_y_repara_archivo(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ruta = os.path.join(tmpdir, "corrupto.json")
+            with open(ruta, "w", encoding="utf-8") as archivo:
+                archivo.write("{archivo_json_danado: [sin_cerrar")
+
+            cargado = self.parqueadero.cargar_desde_json(ruta)
+            self.assertFalse(cargado)
+            self.assertEqual(self.parqueadero.cantidad_disponible(), 2)
+            self.assertTrue(self.parqueadero.cargar_desde_json(ruta))
+
+    def test_cargar_json_vacio_se_recupera(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ruta = os.path.join(tmpdir, "vacio.json")
+            with open(ruta, "w", encoding="utf-8") as archivo:
+                archivo.write("")
+
+            cargado = self.parqueadero.cargar_desde_json(ruta)
+            self.assertFalse(cargado)
+            self.assertEqual(self.parqueadero.cantidad_disponible(), 2)
+
+    def test_cargar_json_estructura_invalida_se_recupera(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ruta = os.path.join(tmpdir, "estructura_invalida.json")
+            with open(ruta, "w", encoding="utf-8") as archivo:
+                archivo.write('{"espacios_ocupados": [{"numero": "uno", "placa": ""}]}')
+
+            cargado = self.parqueadero.cargar_desde_json(ruta)
+            self.assertFalse(cargado)
+            self.assertEqual(self.parqueadero.cantidad_disponible(), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,24 +24,27 @@ def main():
     parqueadero = Parqueadero(CAPACIDAD_PARQUEADERO)
     parqueadero.cargar_desde_json()
 
-    while True:
-        mostrar_menu()
-        opcion = input("Seleccione una opción: ").strip()
+    try:
+        while True:
+            mostrar_menu()
+            opcion = input("Seleccione una opción: ").strip()
 
-        if opcion == "1":
-            registrar_entrada(parqueadero)
-        elif opcion == "2":
-            registrar_salida(parqueadero)
-        elif opcion == "3":
-            menu_consultas(parqueadero)
-        elif opcion == "4":
-            parqueadero.mostrar_disponibilidad()
-            input("\nPresione Enter para volver al menú...")
-        elif opcion == "5":
-            print("Gracias por utilizar el sistema. ¡Hasta pronto!")
-            break
-        else:
-            print("Opción inválida. Seleccione una opción del 1 al 5.")
+            if opcion == "1":
+                registrar_entrada(parqueadero)
+            elif opcion == "2":
+                registrar_salida(parqueadero)
+            elif opcion == "3":
+                menu_consultas(parqueadero)
+            elif opcion == "4":
+                parqueadero.mostrar_disponibilidad()
+                input("\nPresione Enter para volver al menú...")
+            elif opcion == "5":
+                print("Gracias por utilizar el sistema. ¡Hasta pronto!")
+                break
+            else:
+                print("Opción inválida. Seleccione una opción del 1 al 5.")
+    except (KeyboardInterrupt, EOFError):
+        print("\nSaliendo del sistema de forma segura. ¡Hasta pronto!")
 
 
 if __name__ == "__main__":
