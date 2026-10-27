@@ -6,19 +6,8 @@ def registrar_salida(parqueadero):
 
     try:
         placa = validar_placa(input("Ingrese la placa del vehículo: "))
-        espacio = parqueadero.buscar_vehiculo(placa)
-        if espacio is None:
-            raise ValueError("No se encontró ningún vehículo estacionado con esa placa.")
-
-        hora_salida = parqueadero.hora_actual()
-        # Primero validamos y calculamos la tarifa antes de liberar el espacio
-        parqueadero.calcular_tiempo_y_tarifa(
-            espacio.vehiculo.hora_entrada,
-            hora_salida,
-            espacio.vehiculo.tipo
-        )
-
         numero_espacio, vehiculo = parqueadero.registrar_salida(placa)
+        hora_salida = parqueadero.hora_actual()
         cobro = parqueadero.registrar_historial_salida(
             numero_espacio,
             vehiculo,
