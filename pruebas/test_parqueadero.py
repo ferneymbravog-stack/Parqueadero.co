@@ -114,6 +114,47 @@ class TestParqueadero(unittest.TestCase):
             self.assertFalse(cargado)
             self.assertEqual(self.parqueadero.cantidad_disponible(), 2)
 
+    def test_genera_informe_ocupacion(self):
+        self.parqueadero.registrar_entrada(Vehiculo("ABC123", "carro", "2026-10-24 08:00:00"))
+        informe = self.parqueadero.obtener_informe_ocupacion()
+
+        self.assertEqual(informe["capacidad_total"], 2)
+        self.assertEqual(informe["espacios_ocupados"], 1)
+        self.assertEqual(informe["espacios_disponibles"], 1)
+        self.assertEqual(informe["porcentaje_ocupacion"], 50.0)
+        self.assertEqual(informe["ocupacion_por_tipo"]["carro"], 1)
+        self.assertEqual(informe["ocupacion_por_tipo"]["motocicleta"], 0)
+
+    def test_genera_informe_ingresos(self):
+        self.parqueadero.registrar_entrada(Vehiculo("ABC123", "carro", "2026-10-24 08:00:00"))
+        self.parqueadero.registrar_entrada(Vehiculo("MOTO99", "motocicleta", "2026-10-24 09:00:00"))
+
+        espacio_carro, carro = self.parqueadero.registrar_salida("ABC123")
+        self.parqueadero.registrar_historial_salida(espacio_carro, carro, "2026-10-24 10:00:00")
+
+        espacio_moto, moto = self.parqueadero.registrar_salida("MOTO99")
+        self.parqueadero.registrar_historial_salida(espacio_moto, moto, "2026-10-24 09:30:00")
+
+        informe = self.parqueadero.obtener_informe_ingresos()
+        self.assertEqual(informe["total_salidas"], 2)
+        self.assertEqual(informe["horas_totales_cobradas"], 3)
+        self.assertEqual(informe["ingresos_totales"], 7500)
+        self.assertEqual(informe["ingresos_por_tipo"]["carro"], 6000)
+        self.assertEqual(informe["ingresos_por_tipo"]["motocicleta"], 1500)
+
+    def test_filtrar_ingresos_por_fecha(self):
+        self.parqueadero.registrar_entrada(Vehiculo("DIA100", "carro", "2026-10-24 08:00:00"))
+        esp1, v1 = self.parqueadero.registrar_salida("DIA100")
+        self.parqueadero.registrar_historial_salida(esp1, v1, "2026-10-24 09:00:00")
+
+        self.parqueadero.registrar_entrada(Vehiculo("DIA200", "motocicleta", "2026-10-25 10:00:00"))
+        esp2, v2 = self.parqueadero.registrar_salida("DIA200")
+        self.parqueadero.registrar_historial_salida(esp2, v2, "2026-10-25 11:30:00")
+
+        informe_dia_24 = self.parqueadero.obtener_informe_ingresos(fecha="2026-10-24")
+        self.assertEqual(informe_dia_24["total_salidas"], 1)
+        self.assertEqual(informe_dia_24["ingresos_totales"], 3000)
+
 
 if __name__ == "__main__":
     unittest.main()

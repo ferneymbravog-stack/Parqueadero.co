@@ -120,6 +120,157 @@ class Parqueadero:
         print(f"Espacios disponibles: {self.cantidad_disponible()}")
         print(f"Números de espacio libres: {', '.join(libres) if libres else 'Ninguno'}")
 
+    def registrar_historial_salida(self, numero_espacio, vehiculo, hora_salida):
+        cobro = self.calcular_tiempo_y_tarifa(
+            vehiculo.hora_entrada,
+            hora_salida,
+            vehiculo.tipo
+        )
+        registro = {
+            "espacio": numero_espacio,
+            "placa": vehiculo.placa,
+            "tipo": vehiculo.tipo,
+            "hora_entrada": vehiculo.hora_entrada,
+            "hora_salida": hora_salida,
+            "tiempo_estadia": cobro["tiempo_estadia"],
+            "horas_cobradas": cobro["horas_cobradas"],
+            "total_pagar": cobro["total_pagar"],
+        }
+        self.historial_salidas.append(registro)
+        return cobro
+
+    def obtener_informe_ocupacion(self):
+        capacidad_total = len(self.espacios)
+        disponibles = self.cantidad_disponible()
+        ocupados = capacidad_total - disponibles
+        porcentaje_ocupacion = round((ocupados / capacidad_total) * 100, 2) if capacidad_total > 0 else 0.0
+
+        ocupacion_por_tipo = {tipo: 0 for tipo in TARIFAS_POR_HORA}
+        for vehiculo in self.obtener_vehiculos():
+            tipo = "motocicleta" if vehiculo.tipo == "moto" else vehiculo.tipo
+            ocupacion_por_tipo[tipo] = ocupacion_por_tipo.get(tipo, 0) + 1
+
+        return {
+            "capacidad_total": capacidad_total,
+            "espacios_ocupados": ocupados,
+            "espacios_disponibles": disponibles,
+            "porcentaje_ocupacion": porcentaje_ocupacion,
+            "ocupacion_por_tipo": ocupacion_por_tipo,
+        }
+
+    def obtener_informe_ingresos(self, fecha=None):
+        if fecha is not None:
+            fecha = fecha.strip().lower()
+            if fecha == "hoy":
+                fecha = datetime.now().strftime("%Y-%m-%d")
+            else:
+                try:
+                    datetime.strptime(fecha, "%Y-%m-%d")
+                except ValueError:
+                    raise ValueError("Formato de fecha inválido. Use el formato AAAA-MM-DD (ej. 2026-10-25) o 'hoy'.")
+
+            salidas_evaluadas = [
+                salida for salida in self.historial_salidas
+                if str(salida.get("hora_salida", "")).startswith(fecha)
+            ]
+        else:
+            salidas_evaluadas = list(self.historial_salidas)
+
+        ingresos_totales = 0
+        horas_totales = 0
+        ingresos_por_tipo = {tipo: 0 for tipo in TARIFAS_POR_HORA}
+        salidas_por_tipo = {tipo: 0 for tipo in TARIFAS_POR_HORA}
+
+        for salida in salidas_evaluadas:
+            pago = salida.get("total_pagar", 0)
+            horas = salida.get("horas_cobradas", 0)
+            tipo = salida.get("tipo", "").strip().lower()
+            if tipo == "moto":
+                tipo = "motocicleta"
+
+            ingresos_totales += pago
+            horas_totales += horas
+            ingresos_por_tipo[tipo] = ingresos_por_tipo.get(tipo, 0) + pago
+            salidas_por_tipo[tipo] = salidas_por_tipo.get(tipo, 0) + 1
+
+        return {
+            "fecha_filtro": fecha,
+            "total_salidas": len(salidas_evaluadas),
+            "horas_totales_cobradas": horas_totales,
+            "ingresos_totales": ingresos_totales,
+            "ingresos_por_tipo": ingresos_por_tipo,
+            "salidas_por_tipo": salidas_por_tipo,
+            "historial_filtrado": salidas_evaluadas,
+        }
+
+    def mostrar_informe_por_fecha(self, fecha):
+        ingresos = self.obtener_informe_ingresos(fecha=fecha)
+        fecha_mostrada = ingresos["fecha_filtro"]
+
+        print("\n==============================================")
+        print(f"   INFORME DE INGRESOS POR FECHA ({fecha_mostrada})")
+        print("==============================================")
+        print(f"Total de vehículos atendidos (salidas): {ingresos['total_salidas']}")
+        print(f"Total de horas cobradas:                {ingresos['horas_totales_cobradas']} hora(s)")
+        print(f"INGRESOS RECAUDADOS EN LA FECHA:        ${ingresos['ingresos_totales']:,}")
+        print("Desglose por tipo de vehículo:")
+        for tipo, monto in ingresos["ingresos_por_tipo"].items():
+            cantidad_salidas = ingresos["salidas_por_tipo"].get(tipo, 0)
+            print(f"  - {tipo.capitalize()} ({cantidad_salidas} salida(s)): ${monto:,}")
+
+        historial_fecha = ingresos["historial_filtrado"]
+        if historial_fecha:
+            print(f"\n--- HISTORIAL DE SALIDAS DEL {fecha_mostrada} ---")
+            for idx, item in enumerate(historial_fecha, start=1):
+                print(
+                    f"{idx}. Placa: {item.get('placa')} | "
+                    f"Tipo: {str(item.get('tipo', '')).capitalize()} | "
+                    f"Espacio: {item.get('espacio')} | "
+                    f"Salida: {item.get('hora_salida')} | "
+                    f"Estadía: {item.get('tiempo_estadia')} | "
+                    f"Pagado: ${item.get('total_pagar', 0):,}"
+                )
+        else:
+            print(f"\nNo se registraron salidas en la fecha {fecha_mostrada}.")
+
+    def mostrar_informe_ocupacion_e_ingresos(self):
+        ocupacion = self.obtener_informe_ocupacion()
+        ingresos = self.obtener_informe_ingresos()
+
+        print("\n==============================================")
+        print("   INFORME DE OCUPACIÓN E INGRESOS")
+        print("==============================================")
+        print("\n--- 1. ESTADO DE OCUPACIÓN ACTUAL ---")
+        print(f"Capacidad total:       {ocupacion['capacidad_total']} espacios")
+        print(f"Espacios ocupados:     {ocupacion['espacios_ocupados']}")
+        print(f"Espacios disponibles:  {ocupacion['espacios_disponibles']}")
+        print(f"Porcentaje ocupación:  {ocupacion['porcentaje_ocupacion']}%")
+        print("Vehículos estacionados por tipo:")
+        for tipo, cantidad in ocupacion["ocupacion_por_tipo"].items():
+            print(f"  - {tipo.capitalize()}: {cantidad}")
+
+        print("\n--- 2. RESUMEN DE INGRESOS Y SALIDAS ---")
+        print(f"Total de vehículos atendidos (salidas): {ingresos['total_salidas']}")
+        print(f"Total de horas cobradas:                {ingresos['horas_totales_cobradas']} hora(s)")
+        print(f"INGRESOS TOTALES RECAUDADOS:            ${ingresos['ingresos_totales']:,}")
+        print("Desglose de ingresos por tipo de vehículo:")
+        for tipo, monto in ingresos["ingresos_por_tipo"].items():
+            cantidad_salidas = ingresos["salidas_por_tipo"].get(tipo, 0)
+            print(f"  - {tipo.capitalize()} ({cantidad_salidas} salida(s)): ${monto:,}")
+
+        if self.historial_salidas:
+            print("\n--- 3. HISTORIAL DE SALIDAS REGISTRADAS ---")
+            for idx, item in enumerate(self.historial_salidas, start=1):
+                print(
+                    f"{idx}. Placa: {item.get('placa')} | "
+                    f"Tipo: {str(item.get('tipo', '')).capitalize()} | "
+                    f"Espacio: {item.get('espacio')} | "
+                    f"Estadía: {item.get('tiempo_estadia')} | "
+                    f"Pagado: ${item.get('total_pagar', 0):,}"
+                )
+        else:
+            print("\nNo se han registrado salidas facturadas hasta el momento.")
+
     def guardar_en_json(self, ruta_archivo=ARCHIVO_DATOS_JSON):
         try:
             carpeta = os.path.dirname(ruta_archivo)
