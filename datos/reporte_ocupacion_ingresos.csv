@@ -1,0 +1,14 @@
+categoria,indicador,valor
+Ocupacion,Capacidad total,10
+Ocupacion,Espacios ocupados,0
+Ocupacion,Espacios disponibles,10
+Ocupacion,Porcentaje de ocupacion (%),0.0
+Ocupacion por tipo,Vehiculos estacionados (carro),0
+Ocupacion por tipo,Vehiculos estacionados (motocicleta),0
+Ingresos,Total salidas atendidas,1
+Ingresos,Total horas cobradas,1
+Ingresos,Ingresos totales recaudados,1500
+Ingresos por tipo,Salidas registradas (carro),0
+Ingresos por tipo,Total recaudado (carro),0
+Ingresos por tipo,Salidas registradas (motocicleta),1
+Ingresos por tipo,Total recaudado (motocicleta),1500
